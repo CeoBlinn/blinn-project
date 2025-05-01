@@ -1,15 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { OptimizationService } from '../services/optimization';
 import { requireAuth } from '../middleware/auth';
+import { SpendingCategory } from '../types/optimization';
 
 const optimizationService = new OptimizationService();
 
 interface OptimizationRequest {
-  categories: Array<{
-    name: string;
-    amount: number;
-    frequency: 'monthly' | 'annual';
-  }>;
+  categories: SpendingCategory[];
 }
 
 export async function optimizationRoutes(fastify: FastifyInstance) {

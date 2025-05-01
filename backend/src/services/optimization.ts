@@ -1,45 +1,17 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { SpendingCategory, CreditCard, CardReward } from '../types/optimization';
+import { PrismaClient } from '@prisma/client';
+import { 
+  SpendingCategory, 
+  CreditCard, 
+  CardReward, 
+  DbCreditCard,
+  CardWithRewards,
+  DbReward,
+  DbFeature
+} from '../types/optimization';
 
 const prisma = new PrismaClient();
 
-// This would typically come from a database
-const AVAILABLE_CARDS: CreditCard[] = [
-  {
-    id: 'chase-sapphire',
-    name: 'Chase Sapphire Preferred',
-    rewards: [
-      { category: 'Travel', amount: 0.05 }, // 5x points
-      { category: 'Dining', amount: 0.03 }, // 3x points
-      { category: 'Other', amount: 0.01 }, // 1x points
-    ],
-    features: [
-      'No foreign transaction fees',
-      '60,000 point sign-up bonus',
-      'Primary rental car insurance',
-    ],
-  },
-  {
-    id: 'amex-gold',
-    name: 'American Express Gold Card',
-    rewards: [
-      { category: 'Dining', amount: 0.04 }, // 4x points
-      { category: 'Groceries', amount: 0.04 }, // 4x points
-      { category: 'Travel', amount: 0.03 }, // 3x points
-      { category: 'Other', amount: 0.01 }, // 1x points
-    ],
-    features: [
-      '$120 dining credit',
-      '4X points at restaurants',
-      'Trip delay insurance',
-    ],
-  },
-  // Add more cards here
-];
-
-interface CardWithRewards extends CreditCard {
-  totalRewards: number;
-}
+// Remove the AVAILABLE_CARDS constant as we're using the database now
 
 export class OptimizationService {
   private calculateAnnualAmount(category: SpendingCategory): number {
@@ -48,24 +20,15 @@ export class OptimizationService {
       : category.amount;
   }
 
-  private async calculateCardRewards(
-    card: CreditCard,
+  private calculateCardRewards(
+    card: DbCreditCard,
     categories: SpendingCategory[]
-  ): Promise<CardReward[]> {
-    const dbCard = await prisma.creditCard.findUnique({
-      where: { id: card.id },
-      include: { rewards: true },
-    });
-
-    if (!dbCard) {
-      throw new Error(`Card not found: ${card.id}`);
-    }
-
-    return categories.map(category => {
+  ): CardReward[] {
+    return categories.map((category: SpendingCategory) => {
       const annualAmount = this.calculateAnnualAmount(category);
-      const cardReward = dbCard.rewards.find(r => 
-        r.category.toLowerCase() === category.name.toLowerCase()
-      ) || dbCard.rewards.find(r => r.category === 'Other');
+      const cardReward = card.rewards.find((reward: DbReward) => 
+        reward.category.toLowerCase() === category.name.toLowerCase()
+      ) || card.rewards.find((reward: DbReward) => reward.category === 'Other');
 
       return {
         category: category.name,
@@ -78,45 +41,77 @@ export class OptimizationService {
     optimizedCards: CreditCard[];
     potentialRewards: CardReward[];
   }> {
-    // Get all cards from database
-    const dbCards = await prisma.creditCard.findMany({
-      include: {
-        rewards: true,
-        features: true,
-      },
-    });
+    // Get all cards from database with their rewards and features
+    const dbCards = await prisma.$queryRaw<DbCreditCard[]>`
+      WITH card_data AS (
+        SELECT 
+          c.id,
+          c.name,
+          c.issuer,
+          c."createdAt",
+          c."updatedAt",
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', r.id,
+              'category', r.category,
+              'amount', r.amount,
+              'creditCardId', r."creditCardId"
+            )
+          ) FILTER (WHERE r.id IS NOT NULL) as rewards,
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', f.id,
+              'description', f.description,
+              'creditCardId', f."creditCardId"
+            )
+          ) FILTER (WHERE f.id IS NOT NULL) as features
+        FROM "CreditCard" c
+        LEFT JOIN "Reward" r ON r."creditCardId" = c.id
+        LEFT JOIN "Feature" f ON f."creditCardId" = c.id
+        GROUP BY c.id
+      )
+      SELECT 
+        id,
+        name,
+        issuer,
+        "createdAt",
+        "updatedAt",
+        COALESCE(rewards, '[]'::json) as rewards,
+        COALESCE(features, '[]'::json) as features
+      FROM card_data;
+    `;
 
     // Calculate rewards for each card
-    const cardsWithRewardsPromises = dbCards.map(async (dbCard) => {
-      const card: CreditCard = {
-        id: dbCard.id,
-        name: dbCard.name,
-        rewards: await this.calculateCardRewards({
-          ...dbCard,
-          rewards: dbCard.rewards,
-          features: dbCard.features.map(f => f.description),
-        }, categories),
-        features: dbCard.features.map(f => f.description),
-      };
+    const cardsWithRewards: CardWithRewards[] = await Promise.all(
+      dbCards.map(async (dbCard: DbCreditCard) => {
+        const cardRewards = this.calculateCardRewards(dbCard, categories);
+        
+        const card: CreditCard = {
+          id: dbCard.id,
+          name: dbCard.name,
+          rewards: cardRewards,
+          features: dbCard.features.map((feature: DbFeature) => feature.description),
+        };
 
-      const totalRewards = (await this.calculateCardRewards(card, categories))
-        .reduce((sum, reward) => sum + reward.amount, 0);
+        const totalRewards = cardRewards.reduce(
+          (sum: number, reward: CardReward) => sum + reward.amount, 
+          0
+        );
 
-      return { ...card, totalRewards };
-    });
-
-    const cardsWithRewards = await Promise.all(cardsWithRewardsPromises);
+        return { ...card, totalRewards };
+      })
+    );
 
     // Sort cards by total rewards
     const optimizedCards = cardsWithRewards
       .sort((a: CardWithRewards, b: CardWithRewards) => b.totalRewards - a.totalRewards)
-      .map(({ totalRewards, ...card }) => card);
+      .map(({ totalRewards, ...card }: CardWithRewards): CreditCard => card);
 
     // Calculate best possible rewards per category
-    const potentialRewards = categories.map(category => {
+    const potentialRewards = categories.map((category: SpendingCategory) => {
       const bestReward = Math.max(
-        ...cardsWithRewards.map(card =>
-          card.rewards.find(r => r.category === category.name)?.amount || 0
+        ...cardsWithRewards.map((card: CardWithRewards) =>
+          card.rewards.find((reward: CardReward) => reward.category === category.name)?.amount || 0
         )
       );
 

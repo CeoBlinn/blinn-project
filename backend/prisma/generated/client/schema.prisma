@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  engineType    = "binary"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CreditCard {
+  id        String    @id @default(cuid())
+  name      String
+  issuer    String
+  rewards   Reward[]
+  features  Feature[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Reward {
+  id           String     @id @default(cuid())
+  category     String
+  amount       Float // Reward rate as decimal (e.g., 0.05 for 5%)
+  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])
+  creditCardId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Feature {
+  id           String     @id @default(cuid())
+  description  String
+  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])
+  creditCardId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  isVerified   Boolean   @default(false)
+  verifyToken  String?   @unique
+  resetToken   String?   @unique
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

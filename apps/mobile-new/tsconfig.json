@@ -1,0 +1,12 @@
+{
+  "extends": "@tsconfig/react-native/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@blinn/common/*": ["../../packages/common/src/*"]
+    },
+    "skipLibCheck": true,
+    "strict": true
+  }
+} 

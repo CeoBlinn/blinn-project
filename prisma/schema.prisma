@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Basic models for Phase 1
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  isVerified    Boolean   @default(false)
+  verifyToken   String?   @unique
+  resetToken    String?   @unique
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  cards         Card[]
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  issuer    String
+  lastFour  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rewards   CardRewardRule[]
+
+  @@index([userId])
+}
+
+model CardRewardRule {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  mcc       String?  // Merchant Category Code
+  tags      String[] // Merchant tags for matching
+  multiplier Float   // Reward multiplier (e.g., 4.0 for 4x)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cardId])
+  @@index([mcc])
+} 

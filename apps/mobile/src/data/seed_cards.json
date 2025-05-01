@@ -1,0 +1,34 @@
+{
+  "cards": [
+    {
+      "id": "chase-sapphire-reserve",
+      "name": "Chase Sapphire Reserve",
+      "issuer": "Chase",
+      "image": "https://example.com/cards/csr.png",
+      "defaultMultiplier": 1,
+      "rewards": [
+        { "category": "travel", "multiplier": 3 },
+        { "category": "dining", "multiplier": 3 }
+      ]
+    },
+    {
+      "id": "amex-gold",
+      "name": "American Express Gold Card",
+      "issuer": "American Express",
+      "image": "https://example.com/cards/amex-gold.png",
+      "defaultMultiplier": 1,
+      "rewards": [
+        { "category": "restaurants", "multiplier": 4 },
+        { "category": "supermarkets", "multiplier": 4 }
+      ]
+    },
+    {
+      "id": "citi-double-cash",
+      "name": "Citi Double Cash",
+      "issuer": "Citibank",
+      "image": "https://example.com/cards/double-cash.png",
+      "defaultMultiplier": 2,
+      "rewards": []
+    }
+  ]
+} 

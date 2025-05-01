@@ -8,6 +8,7 @@ services:
       npm install
       npx prisma generate
       npm run build
+      cp -r prisma/generated/client node_modules/.prisma/
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV
@@ -16,6 +17,10 @@ services:
         fromDatabase:
           name: blinn-db
           property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
     healthCheckPath: /health
     autoDeploy: true
     github:

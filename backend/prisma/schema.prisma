@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -41,4 +41,18 @@ model Feature {
   creditCardId String
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  isVerified   Boolean   @default(false)
+  verifyToken  String?   @unique
+  resetToken   String?   @unique
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

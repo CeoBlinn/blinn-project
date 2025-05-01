@@ -144,16 +144,36 @@ exports.Prisma.FeatureScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  isVerified: 'isVerified',
+  verifyToken: 'verifyToken',
+  resetToken: 'resetToken',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 
 exports.Prisma.ModelName = {
   CreditCard: 'CreditCard',
   Reward: 'Reward',
-  Feature: 'Feature'
+  Feature: 'Feature',
+  User: 'User'
 };
 
 /**

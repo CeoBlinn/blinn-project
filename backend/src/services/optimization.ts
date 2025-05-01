@@ -11,8 +11,7 @@ import {
 
 const prisma = new PrismaClient();
 
-// Remove the AVAILABLE_CARDS constant as we're using the database now
-
+// Optimization service for credit card rewards calculation
 export class OptimizationService {
   private calculateAnnualAmount(category: SpendingCategory): number {
     return category.frequency === 'monthly' 

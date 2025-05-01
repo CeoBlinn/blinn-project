@@ -14,6 +14,7 @@ services:
         fromDatabase:
           name: blinn-db
           property: connectionString
+    healthCheckPath: /health
 
 databases:
   - name: blinn-db

@@ -42,5 +42,8 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

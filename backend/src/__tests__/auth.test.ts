@@ -133,6 +133,14 @@ describe('Authentication Routes', () => {
 
       const user = await prisma.user.findUnique({
         where: { email: 'test@example.com' },
+        select: {
+          id: true,
+          email: true,
+          verifyToken: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true
+        }
       });
       verifyToken = user!.verifyToken!;
     });
@@ -150,6 +158,14 @@ describe('Authentication Routes', () => {
       // Check that the user is now verified
       const user = await prisma.user.findUnique({
         where: { email: 'test@example.com' },
+        select: {
+          id: true,
+          email: true,
+          verifyToken: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true
+        }
       });
       expect(user!.isVerified).toBe(true);
       expect(user!.verifyToken).toBeNull();

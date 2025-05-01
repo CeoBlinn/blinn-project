@@ -2,17 +2,9 @@ services:
   - type: web
     name: blinn-project-backend
     env: node
-    buildCommand: |
-      export BACKEND_DIR=/opt/render/project/src/backend
-      cd $BACKEND_DIR
-      npm install
-      npm run prisma:generate
-      npm run prisma:migrate
-      npm run build
-    startCommand: |
-      export BACKEND_DIR=/opt/render/project/src/backend
-      cd $BACKEND_DIR
-      npm start
+    plan: free
+    buildCommand: npm install && npm run prisma:generate && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -24,11 +16,13 @@ services:
           property: connectionString
     healthCheckPath: /health
     branch: main
-    buildFilter:
-      paths:
-        - backend/**/*
-        - render.yaml
+    repo:
+      provider: github
+      name: CeoBlinn/blinn-project
+      branch: main
+      rootDir: backend
 
 databases:
   - name: blinn-db
-    plan: starter 
+    plan: free
+    ipAllowList: [] 

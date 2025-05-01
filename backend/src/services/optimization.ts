@@ -1,5 +1,4 @@
-import { PrismaClient, Prisma } from '../generated/prisma';
-import type { CreditCard as PrismaCreditCard, Reward as PrismaReward, Feature as PrismaFeature } from '../generated/prisma';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { SpendingCategory, CreditCard, CardReward } from '../types/optimization';
 
 const prisma = new PrismaClient();
@@ -38,12 +37,9 @@ const AVAILABLE_CARDS: CreditCard[] = [
   // Add more cards here
 ];
 
-type CreditCardWithRelations = Prisma.CreditCardGetPayload<{
-  include: {
-    rewards: true;
-    features: true;
-  };
-}>;
+interface CardWithRewards extends CreditCard {
+  totalRewards: number;
+}
 
 export class OptimizationService {
   private calculateAnnualAmount(category: SpendingCategory): number {
@@ -67,9 +63,9 @@ export class OptimizationService {
 
     return categories.map(category => {
       const annualAmount = this.calculateAnnualAmount(category);
-      const cardReward = dbCard.rewards.find((r: PrismaReward) => 
+      const cardReward = dbCard.rewards.find(r => 
         r.category.toLowerCase() === category.name.toLowerCase()
-      ) || dbCard.rewards.find((r: PrismaReward) => r.category === 'Other');
+      ) || dbCard.rewards.find(r => r.category === 'Other');
 
       return {
         category: category.name,
@@ -91,19 +87,16 @@ export class OptimizationService {
     });
 
     // Calculate rewards for each card
-    const cardsWithRewardsPromises = dbCards.map(async (dbCard: PrismaCreditCard & {
-      rewards: PrismaReward[];
-      features: PrismaFeature[];
-    }) => {
+    const cardsWithRewardsPromises = dbCards.map(async (dbCard) => {
       const card: CreditCard = {
         id: dbCard.id,
         name: dbCard.name,
         rewards: await this.calculateCardRewards({
           ...dbCard,
           rewards: dbCard.rewards,
-          features: dbCard.features.map((f: PrismaFeature) => f.description),
+          features: dbCard.features.map(f => f.description),
         }, categories),
-        features: dbCard.features.map((f: PrismaFeature) => f.description),
+        features: dbCard.features.map(f => f.description),
       };
 
       const totalRewards = (await this.calculateCardRewards(card, categories))
@@ -116,14 +109,14 @@ export class OptimizationService {
 
     // Sort cards by total rewards
     const optimizedCards = cardsWithRewards
-      .sort((a, b) => b.totalRewards - a.totalRewards)
+      .sort((a: CardWithRewards, b: CardWithRewards) => b.totalRewards - a.totalRewards)
       .map(({ totalRewards, ...card }) => card);
 
     // Calculate best possible rewards per category
     const potentialRewards = categories.map(category => {
       const bestReward = Math.max(
         ...cardsWithRewards.map(card =>
-          card.rewards.find((r: CardReward) => r.category === category.name)?.amount || 0
+          card.rewards.find(r => r.category === category.name)?.amount || 0
         )
       );
 

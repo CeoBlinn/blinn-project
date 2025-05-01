@@ -1,18 +1,17 @@
 {
-  "name": "blinn",
-  "version": "0.1.0",
+  "name": "blinn-project",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "backend"
   ],
   "scripts": {
-    "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "build": "cd backend && npm install && npm run prisma:generate && npm run build",
+    "start": "cd backend && npm start",
+    "prisma:generate": "cd backend && npm run prisma:generate",
+    "prisma:migrate": "cd backend && npm run prisma:migrate"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=16.0.0"
   }
 } 

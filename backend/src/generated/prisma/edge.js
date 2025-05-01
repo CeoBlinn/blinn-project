@@ -84,6 +84,9 @@ Prisma.NullTypes = {
  * Enums
  */
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -131,6 +134,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -158,13 +166,17 @@ const config = {
       "fromEnvVar": null
     },
     "config": {
-      "engineType": "library"
+      "engineType": "binary"
     },
     "binaryTargets": [
       {
         "fromEnvVar": null,
         "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -181,7 +193,8 @@ const config = {
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "sqlite",
+  "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -190,8 +203,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel CreditCard {\n  id        String    @id @default(cuid())\n  name      String\n  issuer    String\n  rewards   Reward[]\n  features  Feature[]\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n}\n\nmodel Reward {\n  id           String     @id @default(cuid())\n  category     String\n  amount       Float // Reward rate as decimal (e.g., 0.05 for 5%)\n  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])\n  creditCardId String\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n\nmodel Feature {\n  id           String     @id @default(cuid())\n  description  String\n  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])\n  creditCardId String\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n\nmodel User {\n  id           String    @id @default(cuid())\n  email        String    @unique\n  passwordHash String\n  firstName    String?\n  lastName     String?\n  isVerified   Boolean   @default(false)\n  verifyToken  String?   @unique\n  resetToken   String?   @unique\n  lastLoginAt  DateTime?\n  createdAt    DateTime  @default(now())\n  updatedAt    DateTime  @updatedAt\n}\n",
-  "inlineSchemaHash": "edf3aa43649b28eb8683854f1f1d1f4a172da0abe33b391c83b1db4dc1bc6819",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma\"\n  engineType    = \"binary\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel CreditCard {\n  id        String    @id @default(cuid())\n  name      String\n  issuer    String\n  rewards   Reward[]\n  features  Feature[]\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n}\n\nmodel Reward {\n  id           String     @id @default(cuid())\n  category     String\n  amount       Float // Reward rate as decimal (e.g., 0.05 for 5%)\n  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])\n  creditCardId String\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n\nmodel Feature {\n  id           String     @id @default(cuid())\n  description  String\n  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])\n  creditCardId String\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n\nmodel User {\n  id           String    @id @default(cuid())\n  email        String    @unique\n  passwordHash String\n  firstName    String?\n  lastName     String?\n  isVerified   Boolean   @default(false)\n  verifyToken  String?   @unique\n  resetToken   String?   @unique\n  lastLoginAt  DateTime?\n  createdAt    DateTime  @default(now())\n  updatedAt    DateTime  @updatedAt\n}\n",
+  "inlineSchemaHash": "c79cf565c448e14315673d8af24ab9633af41ce92bb56b6ded9600f23a05fa1e",
   "copyEngine": true
 }
 config.dirname = '/'
